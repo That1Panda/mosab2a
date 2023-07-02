@@ -1,13 +1,9 @@
 
 import os
-import jsonlines
+
 import subprocess
 
 def finetune_model(base_model_name, tokenized_name, corpus_directory):
-    # Mount Google Drive
-    drive_mount_path = '/content/drive'
-    drive_mount_cmd = f'mount {drive_mount_path}'
-    subprocess.run(drive_mount_cmd.split())
 
     # Install required packages
     packages = [
@@ -21,13 +17,15 @@ def finetune_model(base_model_name, tokenized_name, corpus_directory):
         'rwkv==0.7.4',
         'lm_dataformat',
         'tqdm',
-        'ftfy'
+        'ftfy',
+        'jsonlines'
     ]
     pip_install_cmd = f'pip install {" ".join(packages)}'
     subprocess.run(pip_install_cmd.split())
+    import jsonlines
 
     # Set model directory
-    model_dir = '/content/drive/MyDrive/RWKV_model'
+    model_dir = '/RWKV_model'
     os.makedirs(model_dir, exist_ok=True)
     os.chdir(model_dir)
 
@@ -45,23 +43,23 @@ def finetune_model(base_model_name, tokenized_name, corpus_directory):
     subprocess.run(['git', 'clone', 'https://github.com/BlinkDL/RWKV-LM'])
     subprocess.run(['git', 'clone', '-b', 'rwkv-tokenizer', 'https://github.com/cahya-wirawan/json2binidx_tool'])
 
-    # Preprocess data
-    def get_files(folder, suffix=".txt", subdirs=True):
-        file_dirs = []
-        if subdirs:
-            for root, dirs, files in os.walk(folder):
-                for file in files:
-                    if file.endswith(suffix):
-                        file_dir = os.path.join(root, file)
-                        file_dirs.append(file_dir)
-        else:
-            for file in os.listdir(folder):
-                if file.endswith(suffix):
-                    file_dir = os.path.join(folder, file)
-                    file_dirs.append(file_dir)
-        return file_dirs
+    # # Preprocess data
+    # def get_files(folder, suffix=".txt", subdirs=True):
+    #     file_dirs = []
+    #     if subdirs:
+    #         for root, dirs, files in os.walk(folder):
+    #             for file in files:
+    #                 if file.endswith(suffix):
+    #                     file_dir = os.path.join(root, file)
+    #                     file_dirs.append(file_dir)
+    #     else:
+    #         for file in os.listdir(folder):
+    #             if file.endswith(suffix):
+    #                 file_dir = os.path.join(folder, file)
+    #                 file_dirs.append(file_dir)
+    #     return file_dirs
 
-    input_files = ','.join(get_files(corpus_directory))
+    input_files = ','.join(data)
     preprocess_cmd = f'python ./json2binidx_tool/tools/preprocess_data.py --input {input_files} --output-prefix {tokenized_name} --vocab ./json2binidx_tool/rwkv_vocab_v20230424.txt --dataset-impl mmap --tokenizer-type RWKVTokenizer --append-eod'
     subprocess.run(preprocess_cmd.split())
 
@@ -80,6 +78,6 @@ def finetune_model(base_model_name, tokenized_name, corpus_directory):
 # Usage
 base_model_name = "RWKV-4-World-7B-v1-20230626-ctx4096.pth"
 tokenized_name = "tokenized"
-corpus_directory = '/content/drive/MyDrive/corpus'
+data = 'output.txt'
 
-finetune_model(base_model_name, tokenized_name, corpus_directory)
+finetune_model(base_model_name, tokenized_name, data)
